@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Interview extends Model
 {
-    protected guarded = [];
+    protected $guarded = [];
 
     protected $cast = [
         'interview_date' => 'date',
@@ -16,18 +16,18 @@ class Interview extends Model
         'self_confidence' => 'integer'
     ];
 
-    public function user(); BelongsTo
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(User:class);
+        return $this->belongsTo(User::class);
     }
 
-    public function analysisResult(); HasMany
+    public function analysisResult(): hasMany
     {
-        return $this->hasMany(AnalysisResult:class);
+        return $this->hasMany(AnalysisResult::class);
     }
 
-    public function user(); HasMany
+    public function aiOutputs(): hasMany
     {
-        return $this->hasMany(AiOutput:class);
+        return $this->hasMany(AiOutput::class);
     }
 }
