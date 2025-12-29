@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use App\Models\Interview;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class InterviewController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index() {
         $interviews = Interview::query()
             ->where('user_id', auth()->id())
@@ -76,7 +79,7 @@ class InterviewController extends Controller
             'interview_date' => ['required', 'date'],
             'round_type' => ['nullable', 'string', 'max:60'],
             'questions_json' => ['nullable'], // we’ll normalize in model/form later
-            'answers_text' => ['nullable', 'string'],
+            'answer_text' => ['nullable', 'string'],
             'went_well' => ['nullable', 'string'],
             'went_poorly' => ['nullable', 'string'],
             'self_confidence' => ['nullable', 'integer', 'min:1', 'max:10'],

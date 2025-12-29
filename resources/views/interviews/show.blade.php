@@ -33,7 +33,7 @@
 
           <div>
             <h3 class="font-semibold">Answers / Notes</h3>
-            <p class="mt-1 whitespace-pre-wrap text-gray-800">{{ $interview->answers_text ?? '—' }}</p>
+            <p class="mt-1 whitespace-pre-wrap text-gray-800">{{ $interview->answer_text ?? '—' }}</p>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -40,10 +40,10 @@
 </div>
 
 <div class="mt-4">
-  <x-input-label for="answers_text" value="Answers / Notes (what you said)" />
-  <textarea id="answers_text" name="answers_text" rows="6"
-    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('answers_text', $isEdit ? $interview->answers_text : '') }}</textarea>
-  <x-input-error class="mt-2" :messages="$errors->get('answers_text')" />
+  <x-input-label for="answer_text" value="Answers / Notes (what you said)" />
+  <textarea id="answer_text" name="answer_text" rows="6"
+    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('answer_text', $isEdit ? $interview->answer_text : '') }}</textarea>
+  <x-input-error class="mt-2" :messages="$errors->get('answer_text')" />
 </div>
 
 <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">

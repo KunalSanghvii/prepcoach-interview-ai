@@ -10,7 +10,7 @@ class Interview extends Model
 {
     protected $guarded = [];
 
-    protected $cast = [
+    protected $casts = [
         'interview_date' => 'date',
         'questions_json' => 'array',
         'self_confidence' => 'integer'

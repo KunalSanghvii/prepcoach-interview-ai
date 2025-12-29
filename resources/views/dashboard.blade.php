@@ -1,7 +1,17 @@
 <x-app-layout>
-  <x-slot name="header">
-    <h2 class="font-semibold text-xl text-gray-800 leading-tight">Dashboard</h2>
-  </x-slot>
+    <x-slot name="header">
+        <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                Dashboard
+            </h2>
+
+            <a href="{{ route('interviews.create') }}"
+               class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                + New Interview
+            </a>
+        </div>
+    </x-slot>
+
 
   <div class="py-8">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
