@@ -5,12 +5,20 @@
                 Dashboard
             </h2>
 
-            <a href="{{ route('interviews.create') }}"
-               class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
-                + New Interview
-            </a>
+            <div class="flex gap-3">
+                <a href="{{ route('interviews.index') }}"
+                   class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200">
+                    View Interviews
+                </a>
+
+                <a href="{{ route('interviews.create') }}"
+                   class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                    + New Interview
+                </a>
+            </div>
         </div>
     </x-slot>
+
 
 
   <div class="py-8">
