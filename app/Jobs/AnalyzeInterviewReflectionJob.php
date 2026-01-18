@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Interview;
+use App\Models\AnalysisResult;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -20,10 +21,8 @@ class AnalyzeInterviewReflectionJob implements ShouldQueue
         public string $modelVersion = 'ml-v1'
     ) {}
 
-    // "N retries"
     public int $tries = 5;
 
-    // backoff (seconds): 10s, 30s, 60s, 2m, 5m
     public function backoff(): array
     {
         return [10, 30, 60, 120, 300];
@@ -40,31 +39,46 @@ class AnalyzeInterviewReflectionJob implements ShouldQueue
         $interview->analysis_error = null;
         $interview->save();
 
-        // Build payload - adapt fields to your schema
         $payload = [
             'interview_id'    => $interview->id,
             'model_version'   => $this->modelVersion,
             'reflection_text' => (string) ($interview->reflection_text ?? ''),
-            'answers'         => $interview->answers_json ?? null, // optional
+            'answers'         => $interview->answers_json ?? null,
         ];
 
-        $baseUrl = rtrim(config('services.ml.base_url'), '/'); // e.g. http://ml:8000
+        $baseUrl = rtrim(config('services.ml.base_url'), '/');
         $url = $baseUrl . '/v1/analyze';
 
         $response = Http::timeout(8)
-            ->retry(0, 0) // IMPORTANT: don't double-retry here; queue already retries
+            ->retry(0, 0) // queue handles retries
             ->acceptJson()
             ->post($url, $payload);
 
         if (!$response->successful()) {
-            // Throw => queue will retry based on tries/backoff
-            throw new \RuntimeException("ML analyze failed: HTTP {$response->status()} - ".$response->body());
+            throw new \RuntimeException("ML analyze failed: HTTP {$response->status()} - " . $response->body());
         }
 
         $analysis = $response->json();
 
-        // Save results
-        $interview->analysis_json = $analysis;         // if you added this column
+        if (!is_array($analysis)) {
+            throw new \RuntimeException("ML analyze returned non-JSON response.");
+        }
+
+        AnalysisResult::updateOrCreate(
+            [
+                'interview_id'  => $interview->id,
+                'model_version' => $this->modelVersion,
+            ],
+            [
+                'sentiment_label' => $analysis['sentiment_label'] ?? $analysis['sentiment'] ?? null,
+                'sentiment_score' => $analysis['sentiment_score'] ?? null,
+                'clarity_score'   => isset($analysis['clarity_score']) ? (int) $analysis['clarity_score'] : null,
+                'star_score'      => isset($analysis['star_score']) ? (int) $analysis['star_score'] : null,
+                'topics_json'     => $analysis['topics'] ?? $analysis['topics_json'] ?? null,
+                'signals_json'    => $analysis['signals'] ?? $analysis['signals_json'] ?? null,
+            ]
+        );
+
         $interview->analysis_status = 'success';
         $interview->analysis_completed_at = now();
         $interview->analysis_error = null;
@@ -73,7 +87,6 @@ class AnalyzeInterviewReflectionJob implements ShouldQueue
 
     public function failed(Throwable $e): void
     {
-        // This runs after all retries exhausted
         $interview = Interview::find($this->interviewId);
         if (!$interview) return;
 

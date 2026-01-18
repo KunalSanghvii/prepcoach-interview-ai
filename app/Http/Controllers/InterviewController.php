@@ -4,15 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
-use App\Models\Interview;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Models\Interview;
+use App\Jobs\AnalyzeInterviewReflectionJob;
 
 class InterviewController extends Controller
 {
     use AuthorizesRequests;
 
-    public function index() {
+    public function index()
+    {
         $interviews = Interview::query()
             ->where('user_id', auth()->id())
             ->orderByDesc('interview_date')
@@ -22,13 +23,14 @@ class InterviewController extends Controller
         return view('interviews.index', compact('interviews'));
     }
 
-    public function create() {
+    public function create()
+    {
         return view('interviews.create');
     }
 
-    public function store(Request $request) {
+    public function store(Request $request)
+    {
         $validated = $this->validatedInterview($request);
-
         $validated['user_id'] = auth()->id();
 
         if (array_key_exists('questions_json', $validated) && $validated['questions_json'] === null) {
@@ -37,23 +39,32 @@ class InterviewController extends Controller
 
         $interview = Interview::create($validated);
 
+        // ✅ Mini Phase 4: kick off ML analysis in background
+        $interview->update([
+            'analysis_status' => 'pending',
+            'analysis_started_at' => null,
+            'analysis_completed_at' => null,
+            'analysis_error' => null,
+        ]);
+
+        AnalyzeInterviewReflectionJob::dispatch($interview->id, 'ml-v1')
+            ->onQueue('analysis');
+
         return redirect()
             ->route('interviews.show', $interview)
-            ->with('status', 'Interview saved.');
-
-
+            ->with('status', 'Interview saved. Analysis is running…');
     }
 
-    public function show(Interview $interview) {
+    public function show(Interview $interview)
+    {
         $this->authorize('view', $interview);
         return view('interviews.show', compact('interview'));
-
     }
 
-    public function edit(Interview $interview) {
+    public function edit(Interview $interview)
+    {
         $this->authorize('update', $interview);
         return view('interviews.edit', compact('interview'));
-
     }
 
     public function update(Request $request, Interview $interview)
@@ -61,24 +72,35 @@ class InterviewController extends Controller
         $this->authorize('update', $interview);
 
         $validated = $this->validatedInterview($request);
-
         unset($validated['user_id']);
 
         $interview->update($validated);
 
+        // (Optional) Re-run analysis after update
+        // If you DON'T want this, remove this block.
+        $interview->update([
+            'analysis_status' => 'pending',
+            'analysis_started_at' => null,
+            'analysis_completed_at' => null,
+            'analysis_error' => null,
+        ]);
+
+        AnalyzeInterviewReflectionJob::dispatch($interview->id, 'ml-v1')
+            ->onQueue('analysis');
+
         return redirect()
             ->route('interviews.show', $interview)
-            ->with('status', 'Interview updated.');
+            ->with('status', 'Interview updated. Analysis is running…');
     }
 
- private function validatedInterview(Request $request): array
+    private function validatedInterview(Request $request): array
     {
         return $request->validate([
             'company' => ['nullable', 'string', 'max:120'],
             'role' => ['nullable', 'string', 'max:120'],
             'interview_date' => ['required', 'date'],
             'round_type' => ['nullable', 'string', 'max:60'],
-            'questions_json' => ['nullable'], // we’ll normalize in model/form later
+            'questions_json' => ['nullable'],
             'answer_text' => ['nullable', 'string'],
             'went_well' => ['nullable', 'string'],
             'went_poorly' => ['nullable', 'string'],

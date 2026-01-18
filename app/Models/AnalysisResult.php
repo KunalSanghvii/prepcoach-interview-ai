@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AnalysisResult extends Model
 {
+
+    protected $table = 'analysis_result';
     protected $guarded = [];
 
     protected $casts = [
